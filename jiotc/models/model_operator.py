@@ -2,7 +2,7 @@
 
 # author: dongrixinyu
 # contact: dongrixinyu.89@163.com
-# blog: https://eliyar.biz
+# blog: https://github.com/dongrixinyu/
 
 # file: bare_embedding.py
 # time: 2020-06-12 11:27
@@ -46,7 +46,6 @@ class ModelOperator(object):
         
         # 建立的模型
         self.torch_model = torch_model  #.to(device)
-        #self.torch_model.embedding.embedding_layer.to(device)
         
         self.training_hyper_parameters = hyper_parameters
 
@@ -97,6 +96,20 @@ class ModelOperator(object):
     def device(self):
         return self.torch_model.device
     
+    def print_model_structure(self):
+        print('-' * 30 + '\nModel structure: ')
+        print(self.torch_model)
+        print('-' * 30 + '\nParams structure: ')
+        total_params_num = 0
+        for name, parameters in self.torch_model.named_parameters():
+            cur_num = 1
+            for i in parameters.size():
+                cur_num *= i
+            print('\t', name, ':\t', list(parameters.size()),
+                  '\t', format(cur_num, ','))
+            total_params_num += cur_num
+        print('Trainable params number: {:,}'.format(total_params_num))
+    
     def train(self,
               train_dataset_x, train_dataset_y,
               valid_dataset_x, valid_dataset_y):
@@ -104,6 +117,8 @@ class ModelOperator(object):
         
         if self.torch_model is None:
             raise ValueError('`torch_model` should NOT be None.')
+        
+        self.print_model_structure()
         
         batch_size = self.training_hyper_parameters['batch_size']
         print_every = self.training_hyper_parameters['print_every']
@@ -119,8 +134,8 @@ class ModelOperator(object):
                 inputs_tensor = self.torch_model.embedding.process_x_dataset(inputs)
                 labels_tensor = self.torch_model.embedding.process_y_dataset(labels)
                 
-                inputs_tensor = torch.LongTensor(inputs_tensor)
-                labels_tensor = torch.LongTensor(labels_tensor)
+                inputs_tensor = torch.LongTensor(inputs_tensor).to(self.device)
+                labels_tensor = torch.LongTensor(labels_tensor).to(self.device)
 
                 # Forward pass
                 outputs = self.torch_model(inputs_tensor)
@@ -140,14 +155,16 @@ class ModelOperator(object):
                     #pdb.set_trace()
                     train_loss, train_accuracy, train_weighted_f1, train_average_f1 = self.evaluate(
                         train_dataset_x, train_dataset_y, print_detail=False)
-                    print('Epoch [{}/{}], Step [{}/{}], Train Loss: {:.4f}, '
-                          'Valid Loss: {:.4f}, Train Micro F1: {:.2%}, '
-                          'Valid Micro F1: {:.2%}, Train Macro F1: {:.2%}, '
-                          'Valid Macro F1: {:.2%}.'
+                    print('Epoch [{}/{}], Step [{}/{}], \n\tTrain Loss: {:.4f}, '
+                          'Valid Loss: {:.4f}, \n\tTrain Micro F1: {:.2%}, '
+                          'Valid Micro F1: {:.2%}, \n\tTrain Macro F1: {:.2%}, '
+                          'Valid Macro F1: {:.2%}, \n\tTrain Accuracy: {:.2%}, '
+                          'Valid Accuracy: {:.2%}.'
                           .format(epoch + 1, self.training_hyper_parameters['epoch'],
                                   i + 1, total_step, train_loss, valid_loss,
                                   train_weighted_f1, valid_weighted_f1, 
-                                  train_average_f1, valid_average_f1))
+                                  train_average_f1, valid_average_f1,
+                                  train_accuracy, valid_accuracy))
                     
                 elif (i + 1) % print_every == 0:
                     
@@ -156,8 +173,8 @@ class ModelOperator(object):
                         valid_dataset_x, valid_dataset_y, print_detail=False)
                     #pdb.set_trace()
                     
-                    print('Epoch [{}/{}], Step [{}/{}], Train Loss: {:.4f}, '
-                          'Valid Loss: {:.4f}, Valid Micro F1: {:.2%}, '
+                    print('Epoch [{}/{}], Step [{}/{}], \n\tTrain Loss: {:.4f}, '
+                          'Valid Loss: {:.4f}, \n\tValid Micro F1: {:.2%}, '
                           'Valid Macro F1: {:.2%}, Valid Accuracy: {:.2%}'
                           .format(epoch + 1, self.training_hyper_parameters['epoch'],
                                   i + 1, total_step, loss.item(), valid_loss,
@@ -169,6 +186,12 @@ class ModelOperator(object):
         torch.save(self.torch_model, model_name)
     
     def load(self, model_name: str = 'model.ckpt', device: str = None):
+        # apply to the device
+        if device is None:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            device = torch.device(device)
+        
         if os.path.isabs(model_name):
             model_path = model_name
         else:
@@ -179,13 +202,7 @@ class ModelOperator(object):
         
         # resnet.load_state_dict(torch.load('params.ckpt'))  # 仅加载模型参数，可以用于继续训练
         self.torch_model = torch.load(model_path)
-        
-        # apply to the device
-        if device is None:
-            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        else:
-            device = torch.device(device)
-        self.torch_model.to(device)
+        self.torch_model = self.torch_model.to(device)
 
     def evaluate(self, valid_dataset_x, valid_dataset_y, print_detail=True):
         
@@ -204,8 +221,8 @@ class ModelOperator(object):
                 inputs_tensor = self.torch_model.embedding.process_x_dataset(inputs)
                 labels_tensor = self.torch_model.embedding.process_y_dataset(labels)
                 
-                inputs_tensor = torch.LongTensor(inputs_tensor)
-                labels_tensor = torch.LongTensor(labels_tensor)
+                inputs_tensor = torch.LongTensor(inputs_tensor).to(self.device)
+                labels_tensor = torch.LongTensor(labels_tensor).to(self.device)
                 
                 outputs = self.torch_model(inputs_tensor)
                 
@@ -247,7 +264,7 @@ class ModelOperator(object):
                 self._dispatch_dataset(batch_size, input_data)):
                 
                 inputs_tensor = self.torch_model.embedding.process_x_dataset(inputs)
-                inputs_tensor = torch.LongTensor(inputs_tensor)
+                inputs_tensor = torch.LongTensor(inputs_tensor).to(self.device)
                 
                 outputs = self.torch_model(inputs_tensor)
                 

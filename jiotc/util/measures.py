@@ -1,4 +1,11 @@
-# -*- coding = utf-8 -*-
+# -*- coding=utf-8 -*-
+
+# author: dongrixinyu
+# contact: dongrixinyu.89@163.com
+# blog: https://github.com/dongrixinyu/
+
+# file: measures.py
+# time: 2020-06-12 11:27
 
 import pdb
 import logging
@@ -15,7 +22,7 @@ def compute_accuracy(pred_labels, true_labels, print_detail=True):
             correct_num += 1
     
     if print_detail:
-        print('\tAccuracy: {:.2%}'.format(correct_num / total_num))
+        print('\n\tAccuracy: {:.2%}'.format(correct_num / total_num))
         
     return correct_num / total_num
 
@@ -68,7 +75,7 @@ def compute_f1_single_label(pred_labels, true_labels,
         weighted_f1 += v * (true_stats.get(k) / len(true_labels))
 
     if print_detail:
-        print('\tAverage_F1: {:.2%}\n\tWeighted_F1: {:.2%}'.format(
+        print('\n\tAverage_F1: {:.2%}\n\tWeighted_F1: {:.2%}'.format(
             average_f1, weighted_f1))
 
     # ave_recall = sum(preds_stats.values())

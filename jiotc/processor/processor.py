@@ -2,7 +2,7 @@
 
 # author: dongrixinyu
 # contact: dongrixinyu.89@163.com
-# blog: https://eliyar.biz
+# blog: https://github.com/dongrixinyu/
 
 # file: processor.py
 # time: 2020-06-12 11:27

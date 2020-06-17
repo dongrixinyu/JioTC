@@ -1,8 +1,8 @@
 # encoding: utf-8
 """
-@author: BrikerMan
-@contact: eliyar917@gmail.com
-@blog: https://eliyar.biz
+@author: dongrixinyu
+@contact: dongrixinyu.89@163.com
+@blog: https://github.com/dongrixinyu/
 
 @version: 1.0
 @license: Apache Licence
