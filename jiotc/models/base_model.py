@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
-from text_classification.embeddings.base_embedding import BaseEmbedding
+from jiotc.embeddings.base_embedding import BaseEmbedding
 
 
 # Bidirectional LSTM neural network (many-to-one)

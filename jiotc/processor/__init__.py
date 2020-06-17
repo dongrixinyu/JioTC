@@ -8,7 +8,7 @@
 # time: 2019-05-20 10:54
 
 
-from text_classification.processor.processor import Processor
+from jiotc.processor.processor import Processor
 
 
 

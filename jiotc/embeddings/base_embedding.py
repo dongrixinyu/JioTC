@@ -12,7 +12,7 @@ import json
 from typing import Union, List, Optional, Dict
 
 import numpy as np
-from text_classification.processor import Processor
+from jiotc.processor import Processor
 
 
 class BaseEmbedding(object):

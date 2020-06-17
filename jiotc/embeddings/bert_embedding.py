@@ -18,7 +18,7 @@ from typing import Union, List, Optional, Dict, Tuple, Any
 import numpy as np
 
 from .base_embedding import BaseEmbedding
-from text_classification.processor import Processor
+from jiotc.processor import Processor
 
 class BERTEmbedding(BaseEmbedding):
     """Pre-trained BERT embedding"""

@@ -36,7 +36,7 @@ import numpy as np
 from gensim.models import KeyedVectors
 
 from .base_embedding import BaseEmbedding
-from text_classification.processor import Processor
+from jiotc.processor import Processor
 
 class WordEmbedding(BaseEmbedding):
     """Pre-trained word2vec embedding"""

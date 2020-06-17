@@ -13,8 +13,8 @@
 
 import os
 
-from text_classification import models
-from text_classification import embeddings
-from text_classification import processor
+from jiotc import models
+from jiotc import embeddings
+from jiotc import processor
 
 

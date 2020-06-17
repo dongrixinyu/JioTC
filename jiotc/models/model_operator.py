@@ -19,7 +19,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from text_classification.util import compute_f1_single_label, compute_accuracy
+from jiotc.util import compute_f1_single_label, compute_accuracy
 
 
 class ModelOperator(object):

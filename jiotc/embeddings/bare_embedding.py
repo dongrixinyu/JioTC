@@ -16,7 +16,7 @@ from typing import Union, Optional
 import torch.nn as nn
 
 from .base_embedding import BaseEmbedding
-from text_classification.processor import Processor
+from jiotc.processor import Processor
 
 
 class BareEmbedding(BaseEmbedding):
