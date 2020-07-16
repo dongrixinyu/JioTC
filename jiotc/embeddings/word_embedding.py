@@ -38,6 +38,7 @@ from gensim.models import KeyedVectors
 from .base_embedding import BaseEmbedding
 from jiotc.processor import Processor
 
+
 class WordEmbedding(BaseEmbedding):
     """Pre-trained word2vec embedding"""
 
@@ -75,10 +76,11 @@ class WordEmbedding(BaseEmbedding):
         self.w2v_kwargs = w2v_kwargs
         self.w2v_model_loaded = False
 
-        super(WordEmbedding, self).__init__(sequence_length=sequence_length,
-                                            embedding_size=0,
-                                            processor=processor,
-                                            from_saved_model=from_saved_model)
+        super(WordEmbedding, self).__init__(
+            sequence_length=sequence_length,
+            embedding_size=0,
+            processor=processor,
+            from_saved_model=from_saved_model)
 
         if not from_saved_model:
             self._build_token2idx_from_w2v()
@@ -87,7 +89,8 @@ class WordEmbedding(BaseEmbedding):
 
     def _build_token2idx_from_w2v(self):
         # 加载
-        w2v = KeyedVectors.load_word2vec_format(self.w2v_path, **self.w2v_kwargs)
+        w2v = KeyedVectors.load_word2vec_format(
+            self.w2v_path, **self.w2v_kwargs)
         
         # 整理 token2idx
         token2idx = {
@@ -114,6 +117,7 @@ class WordEmbedding(BaseEmbedding):
 
         self.processor.token2idx = self.w2v_token2idx
         self.processor.idx2token = dict([(value, key) for key, value in self.w2v_token2idx.items()])
+        
         logging.debug('-' * 40)
         logging.debug('Loaded gensim word2vec model')
         logging.debug('model        : {}'.format(self.w2v_path))
@@ -162,34 +166,6 @@ class WordEmbedding(BaseEmbedding):
 if __name__ == "__main__":
     w2v = WordEmbedding()
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

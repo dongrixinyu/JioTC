@@ -38,10 +38,12 @@ class BareEmbedding(BaseEmbedding):
                 If using an integer, let's say ``50``, the input output sequence length will set to 50.
             embedding_size: Dimension of the dense embedding.
         """
-        super(BareEmbedding, self).__init__(sequence_length=sequence_length,
-                                            embedding_size=embedding_size,
-                                            processor=processor,
-                                            from_saved_model=from_saved_model)
+        super(BareEmbedding, self).__init__(
+            sequence_length=sequence_length,
+            embedding_size=embedding_size,
+            processor=processor,
+            from_saved_model=from_saved_model)
+        
         if not from_saved_model:
             self._build_model()
 
@@ -55,8 +57,5 @@ class BareEmbedding(BaseEmbedding):
             self.embedding_layer = nn.Embedding(self.token_count, self.embedding_size)
             #return self.embedding
 
-
-if __name__ == "__main__":
-    print('hello world')
 
 

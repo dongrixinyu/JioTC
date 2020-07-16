@@ -9,8 +9,8 @@
 
 
 from jiotc.models.model_operator import ModelOperator
-from jiotc.models.bilstm_model import BiLSTM_Model
-
+from jiotc.models.bilstm_model import BiLSTMModel
+from jiotc.models.bilstm_attention_model import BiLSTMAttentionModel
 
 
 

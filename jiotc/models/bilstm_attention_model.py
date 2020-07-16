@@ -4,8 +4,8 @@
 # contact: dongrixinyu.89@163.com
 # blog: https://github.com/dongrixinyu/
 
-# file: bare_embedding.py
-# time: 2020-06-12 11:27
+# file: bilstm_attention_model.py
+# time: 2020-07-15 17:37
 
 import os
 import pdb
@@ -15,14 +15,16 @@ from typing import Union, Optional, Dict, Any, Tuple
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F 
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
 
 from jiotc.embeddings.base_embedding import BaseEmbedding
 from .base_model import BaseModel
 
 
 # Bidirectional LSTM neural network (many-to-one)
-class BiLSTMModel(BaseModel):
+class BiLSTMAttentionModel(BaseModel):
     
     @classmethod
     def get_default_hyper_parameters(cls) -> Dict[str, Dict[str, Any]]:
@@ -49,7 +51,7 @@ class BiLSTMModel(BaseModel):
         self.num_classes
         参数已知，可以直接使用
         '''
-        super(BiLSTMModel, self).__init__(embed_model, device=device)
+        super(BiLSTMAttentionModel, self).__init__(embed_model, device=device)
         
         self.hidden_size = hyper_parameters['layer_bi_lstm']['hidden_size']
         self.num_layers = hyper_parameters['layer_bi_lstm']['num_layers']
@@ -59,8 +61,15 @@ class BiLSTMModel(BaseModel):
             self.embedding_size, self.hidden_size, self.num_layers, 
             batch_first=True, bidirectional=True)
         
+        self.w_attention = nn.Parameter(torch.Tensor(
+            self.hidden_size * 2, self.hidden_size * 2))
+        self.query_attention = nn.Parameter(torch.Tensor(self.hidden_size * 2, 1))
+        
         self.fc = nn.Linear(self.hidden_size * 2,
                             self.num_classes)  # 2 for bidirection
+        
+        nn.init.uniform_(self.w_attention, -0.1, 0.1)
+        nn.init.uniform_(self.query_attention, -0.1, 0.1)
 
     def forward(self, samples):
         
@@ -85,7 +94,7 @@ class BiLSTMModel(BaseModel):
             self.hidden_size)).to(self.device)
         #'''
         # Forward propagate LSTM
-        packed_output, _ = self.lstm(pack_sequence)  #, (h0, c0))
+        packed_output, _ = self.lstm(pack_sequence)
         # out: tensor of shape (batch_size, seq_length, hidden_size * 2)
         
         lstm_out, _ = pad_packed_sequence(packed_output, batch_first=True)
@@ -94,10 +103,19 @@ class BiLSTMModel(BaseModel):
         lstm_out = lstm_out[unperm_idx, :]
         #pdb.set_trace()
         
-        lstm_out_sum = torch.mean(lstm_out, dim=1)
-        output = self.fc(lstm_out_sum)
+        # attention_layer
+        lstm_out = lstm_out.permute(1, 0, 2)
+        u = torch.tanh(torch.matmul(lstm_out, self.w_attention))
+        att = torch.matmul(u, self.query_attention)
+        att_score = F.softmax(att, dim=1)
+        
+        att_lstm_out = lstm_out * att_score
+        att_lstm_out = att_lstm_out.permute(1, 0, 2)
+        
+        #pdb.set_trace()
+        att_lstm_out_mean = torch.mean(att_lstm_out, dim=1)
+        output = self.fc(att_lstm_out_mean)
+        
         return output
-
-
 
 
