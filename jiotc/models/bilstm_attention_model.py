@@ -104,17 +104,27 @@ class BiLSTMAttentionModel(BaseModel):
         #pdb.set_trace()
         
         # attention_layer
-        lstm_out = lstm_out.permute(1, 0, 2)
-        u = torch.tanh(torch.matmul(lstm_out, self.w_attention))
-        att = torch.matmul(u, self.query_attention)
-        att_score = F.softmax(att, dim=1)
+        lstm_out = lstm_out.permute(1, 0, 2)  # [batch_size, seq_len, hidden_size] => [seq_len, batch_size, hidden_size]
+        u = torch.tanh(torch.matmul(lstm_out, self.w_attention))  # [seq_len, batch_size, hidden_size] => [seq_len, batch_size, 1]
+        att = torch.matmul(u, self.query_attention)  # [seq_len, batch_size, 1]
+        att = torch.squeeze(att, dim=-1)  # [seq_len, batch_size, 1] => [seq_len, batch_size]
         
-        att_lstm_out = lstm_out * att_score
-        att_lstm_out = att_lstm_out.permute(1, 0, 2)
+        att_score = F.softmax(att, dim=0)  # [seq_len, batch_size]
+        # 观察实例
+        #print(samples[:,0])
+        #print([float(item) for item in att_score[:,0].cpu().detach().numpy()][:30])
         
+        seq_len, batch_size = att_score.shape
+        att_score = torch.unsqueeze(att_score, 2).expand(seq_len, batch_size, self.hidden_size * 2)
+        # [seq_len, batch_size] => [seq_len, batch_size, hidden_size]
+        
+        att_lstm_out = lstm_out * att_score  # 对应项点乘  [seq_len, batch_size, hidden_size]
+        att_lstm_out = att_lstm_out.permute(1, 0, 2)  # [seq_len, batch_size, hidden_size] => [batch_size, seq_len, hidden_size]
+        
+        att_lstm_out_sum = torch.sum(att_lstm_out, dim=1)
+        
+        output = self.fc(att_lstm_out_sum)
         #pdb.set_trace()
-        att_lstm_out_mean = torch.mean(att_lstm_out, dim=1)
-        output = self.fc(att_lstm_out_mean)
         
         return output
 

@@ -179,7 +179,8 @@ class BaseEmbedding(object):
         Returns:
             vectorized feature tensor
         """
-        return self.processor.process_x_dataset(data, self.sequence_length, subset)
+        return self.processor.process_x_dataset(
+            data, self.sequence_length, subset)
 
     def process_y_dataset(self,
                           data, #: List[List[str]],
@@ -194,7 +195,8 @@ class BaseEmbedding(object):
         Returns:
             vectorized feature tensor
         """
-        return self.processor.process_y_dataset(data, self.sequence_length, subset)
+        return self.processor.process_y_dataset(
+            data, self.sequence_length, subset)
 
     def reverse_numerize_label_sequences(self,
                                          sequences):

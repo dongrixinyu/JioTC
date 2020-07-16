@@ -44,8 +44,8 @@ class BareEmbedding(BaseEmbedding):
             processor=processor,
             from_saved_model=from_saved_model)
         
-        if not from_saved_model:
-            self._build_model()
+        #if not from_saved_model:
+        #    self._build_model()
 
     def _build_model(self, **kwargs):
         if self.sequence_length == 0 or \
@@ -55,7 +55,6 @@ class BareEmbedding(BaseEmbedding):
         else:
             # 指定该向量层
             self.embedding_layer = nn.Embedding(self.token_count, self.embedding_size)
-            #return self.embedding
 
 
 

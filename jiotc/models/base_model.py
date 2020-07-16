@@ -34,7 +34,7 @@ class BaseModel(nn.Module):
         self.device = device
         
         self.embedding = embed_model
-        self.embedding._build_model()  # 加载 embed 层
+        #self.embedding._build_model()  # 加载 embed 层，与之前有重复之处
         self.embedding_layer = self.embedding.embedding_layer.to(self.device)
         
         # 构建 embedding 以及预处理时已经确定的参数，可以复制
