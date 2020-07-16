@@ -131,6 +131,8 @@ class ModelOperator(object):
                 self._dispatch_dataset(batch_size, train_dataset_x,
                                        train_dataset_y, pad_to_batch=True)):
                 
+                self.torch_model.training = True
+                
                 inputs_tensor = self.torch_model.embedding.process_x_dataset(inputs)
                 labels_tensor = self.torch_model.embedding.process_y_dataset(labels)
                 
@@ -168,7 +170,6 @@ class ModelOperator(object):
                     
                 elif (i + 1) % print_every == 0:
                     
-                    #compute_f1_single_label
                     valid_loss, valid_accuracy, valid_weighted_f1, valid_average_f1 = self.evaluate(
                         valid_dataset_x, valid_dataset_y, print_detail=False)
                     #pdb.set_trace()
@@ -212,6 +213,7 @@ class ModelOperator(object):
         batch_size = self.training_hyper_parameters['batch_size']
         
         with torch.no_grad():
+            self.torch_model.training = False
             pred_y_list = list()
             true_y_list = list()
             loss_list = list()
@@ -259,6 +261,7 @@ class ModelOperator(object):
             raise ValueError('`torch_model` should NOT be None.')
             
         with torch.no_grad():
+            self.torch_model.training = False
             predicted = list()
             for i, inputs in enumerate(
                 self._dispatch_dataset(batch_size, input_data)):

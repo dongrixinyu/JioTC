@@ -55,6 +55,7 @@ class BiLSTMAttentionModel(BaseModel):
         
         self.hidden_size = hyper_parameters['layer_bi_lstm']['hidden_size']
         self.num_layers = hyper_parameters['layer_bi_lstm']['num_layers']
+        self.dropout = hyper_parameters['layer_bi_lstm']['dropout']
         
         #pdb.set_trace()
         self.lstm = nn.LSTM(
@@ -65,6 +66,7 @@ class BiLSTMAttentionModel(BaseModel):
             self.hidden_size * 2, self.hidden_size * 2))
         self.query_attention = nn.Parameter(torch.Tensor(self.hidden_size * 2, 1))
         
+        #self.dropout_layer = nn.Dropout2d(self.dropout)
         self.fc = nn.Linear(self.hidden_size * 2,
                             self.num_classes)  # 2 for bidirection
         
@@ -84,15 +86,6 @@ class BiLSTMAttentionModel(BaseModel):
         pack_sequence = pack_padded_sequence(
             embeds, lengths=sorted_seq_length, batch_first=True)
         
-        # Set initial states, involved with batch_size
-        '''
-        h0 = torch.autograd.Variable(torch.randn(
-            self.num_layers * 2, embeds.shape[0],
-            self.hidden_size)).to(self.device)  # 2 for bidirection 
-        c0 = torch.autograd.Variable(torch.randn(
-            self.num_layers * 2, embeds.shape[0], 
-            self.hidden_size)).to(self.device)
-        #'''
         # Forward propagate LSTM
         packed_output, _ = self.lstm(pack_sequence)
         # out: tensor of shape (batch_size, seq_length, hidden_size * 2)
@@ -101,30 +94,36 @@ class BiLSTMAttentionModel(BaseModel):
         _, unperm_idx = perm_idx.sort()
         
         lstm_out = lstm_out[unperm_idx, :]
-        #pdb.set_trace()
+        
+        # dropout_layer
+        lstm_out = lstm_out.permute(1, 0, 2)  # [batch_size, seq_len, hidden_size] => [seq_len, batch_size, hidden_size * 2]
+        lstm_out = F.dropout2d(lstm_out, p=self.dropout, training=self.training)
         
         # attention_layer
-        lstm_out = lstm_out.permute(1, 0, 2)  # [batch_size, seq_len, hidden_size] => [seq_len, batch_size, hidden_size]
         u = torch.tanh(torch.matmul(lstm_out, self.w_attention))  # [seq_len, batch_size, hidden_size] => [seq_len, batch_size, 1]
         att = torch.matmul(u, self.query_attention)  # [seq_len, batch_size, 1]
         att = torch.squeeze(att, dim=-1)  # [seq_len, batch_size, 1] => [seq_len, batch_size]
         
         att_score = F.softmax(att, dim=0)  # [seq_len, batch_size]
-        # 观察实例
-        #print(samples[:,0])
-        #print([float(item) for item in att_score[:,0].cpu().detach().numpy()][:30])
         
+        if not self.training:
+            # 观察实例
+            #print(samples[:,0])
+            #print([float(item) for item in att_score[:,0].cpu().detach().numpy()][:30])
+            #pdb.set_trace()
+            pass
+            
         seq_len, batch_size = att_score.shape
         att_score = torch.unsqueeze(att_score, 2).expand(seq_len, batch_size, self.hidden_size * 2)
-        # [seq_len, batch_size] => [seq_len, batch_size, hidden_size]
+        # [seq_len, batch_size] => [seq_len, batch_size, hidden_size * 2]
         
-        att_lstm_out = lstm_out * att_score  # 对应项点乘  [seq_len, batch_size, hidden_size]
-        att_lstm_out = att_lstm_out.permute(1, 0, 2)  # [seq_len, batch_size, hidden_size] => [batch_size, seq_len, hidden_size]
+        att_lstm_out = lstm_out * att_score  # 对应项点乘  [seq_len, batch_size, hidden_size * 2]
+        att_lstm_out = att_lstm_out.permute(1, 0, 2)  # [seq_len, batch_size, hidden_size * 2] => [batch_size, seq_len, hidden_size * 2]
         
         att_lstm_out_sum = torch.sum(att_lstm_out, dim=1)
         
+        # full_connection_layer
         output = self.fc(att_lstm_out_sum)
-        #pdb.set_trace()
         
         return output
 
