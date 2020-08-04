@@ -49,7 +49,8 @@ class ModelOperator(object):
         
         self.training_hyper_parameters = hyper_parameters
 
-    def compile_model(self, loss_func=None, optimizer=None, metric=['f1', 'acc']):
+    def compile_model(self, loss_func=None, optimizer=None, metric=['f1', 'acc'],
+                      regularization='l2'):
         # 指定损失函数
         if loss_func is None:
             self.loss_func = nn.CrossEntropyLoss()
@@ -60,9 +61,14 @@ class ModelOperator(object):
         if optimizer is None:
             self.optimizer = torch.optim.Adam(
                 self.torch_model.parameters(),
-                lr=self.training_hyper_parameters['learning_rate'])
+                lr=self.training_hyper_parameters['learning_rate'],
+                weight_decay=1e-3)
         else:
             self.optimizer = optimizer
+            
+        #if regularization == 'l2':
+            
+        
             
     def _dispatch_dataset(self, batch_size, dataset_x, dataset_y=None, 
                           pad_to_batch=False):

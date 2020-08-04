@@ -13,6 +13,11 @@ def dataset_spliter(dataset_x, dataset_y,
     
     random.shuffle(dataset)
     
+    # 统计各个类别的数据数量及占比
+    # class_list = list(set(dataset_y))
+    # dataset_y = 
+    
+    
     tmp_ds = list()
     current = 0
     for s in ratio:

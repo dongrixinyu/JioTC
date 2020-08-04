@@ -55,11 +55,9 @@ class BiLSTMModel(BaseModel):
         self.num_layers = hyper_parameters['layer_bi_lstm']['num_layers']
         self.dropout = hyper_parameters['layer_bi_lstm']['dropout']
         
-        #pdb.set_trace()
         self.lstm = nn.LSTM(
             self.embedding_size, self.hidden_size, self.num_layers, 
             batch_first=True, bidirectional=True)
-        #self.dropout_layer = nn.Dropout2d(self.dropout)
         self.fc = nn.Linear(self.hidden_size * 2,
                             self.num_classes)  # 2 for bidirection
 
@@ -96,10 +94,10 @@ class BiLSTMModel(BaseModel):
         
         # dropout_layer
         lstm_out = lstm_out.permute(1, 0, 2)  # [batch_size, seq_len, hidden_size * 2] => [seq_len, batch_size, hidden_size * 2]
-        #lstm_out = self.dropout_layer(lstm_out)
+        # disabled when not training
         lstm_out = F.dropout2d(lstm_out, p=self.dropout, training=self.training)
         lstm_out = lstm_out.permute(1, 0, 2)  # [seq_len, batch_size, hidden_size * 2] => [batch_size, seq_len, hidden_size * 2]
-        #pdb.set_trace()
+        
         
         lstm_out_sum = torch.mean(lstm_out, dim=1)
         output = self.fc(lstm_out_sum)

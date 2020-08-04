@@ -198,8 +198,7 @@ class BaseEmbedding(object):
         return self.processor.process_y_dataset(
             data, self.sequence_length, subset)
 
-    def reverse_numerize_label_sequences(self,
-                                         sequences):
+    def reverse_numerize_label_sequences(self, sequences):
         return self.processor.reverse_numerize_label_sequences(sequences)
 
     def __repr__(self):

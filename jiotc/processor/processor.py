@@ -45,6 +45,7 @@ class Processor(object):
         self.sequence_length = kwargs.get('sequence_length', None)
 
         self.min_count = kwargs.get('min_count', 3)
+        self.max_token_num = kwargs.get('max_token_num', 50000)
         
         self.multi_label = multi_label
         if self.label2idx:
@@ -80,18 +81,21 @@ class Processor(object):
         self.dataset_info['RECOMMEND_LEN'] = rec_len
 
         if len(self.token2idx) == 0 or force:
-            self._build_token_dict(corpus, self.min_count)
+            self._build_token_dict(corpus, self.min_count, self.max_token_num)
         if len(self.label2idx) == 0 or force:
             self._build_label_dict(labels)
         # pdb.set_trace()
-            
-    def _build_token_dict(self, corpus: List[List[str]], min_count: int = 3):
+        
+    def _build_token_dict(self, corpus: List[List[str]], min_count: int = 3,
+                          max_token_num: int = 50000):
         """
         Build token index dictionary using corpus
 
         Args:
-            corpus: List of tokenized sentences, like ``[['I', 'love', 'tf'], ...]``
-            min_count:
+            corpus: List of tokenized sentences, like ``[['I', 'love', 'torch'], ...]``
+            min_count: 文本中最低 token 频率，低于最低频率不予统计，以 unk 替代
+            max_token_num: 模型中允许 token 个数的最大上限
+            
         """
         token2idx = {
             self.token_pad: 0,
@@ -101,13 +105,13 @@ class Processor(object):
             self.token_sap: 4
         }
 
-        token2count = {}
+        token2count = dict()
         for sentence in corpus:
             for token in sentence:
                 count = token2count.get(token, 0)
                 token2count[token] = count + 1
         self.token2count = token2count
-
+        
         # 按照词频降序排序
         sorted_token2count = sorted(token2count.items(),
                                     key=operator.itemgetter(1),
@@ -117,12 +121,15 @@ class Processor(object):
         for token, token_count in token2count.items():
             if token not in token2idx and token_count >= min_count:
                 token2idx[token] = len(token2idx)
+                
+        token2idx = dict(tuple(token2idx.items())[:max_token_num])
 
         self.token2idx = token2idx
         self.idx2token = dict([(value, key)
                                for key, value in self.token2idx.items()])
         logging.debug(f"build token2idx dict finished, contains {len(self.token2idx)} tokens.")
         self.dataset_info['token_count'] = len(self.token2idx)
+        #pdb.set_trace()
 
     def _build_label_dict(self, labels: List[str]):
         if self.multi_label:
@@ -145,12 +152,44 @@ class Processor(object):
                           data: List[List[str]],
                           max_len: Optional[int] = None,
                           subset: Optional[List[int]] = None) -> np.ndarray:
+        ''' 处理输入数据
+        
+        
+        Args:
+            data: 输入数据，分两块，一块为需要经过 id 转换的文本 token 信息，另一部分为不需要
+                经过转换的信息，如预先计算的注意力信息等。
+            
+            
+            
+        Returns:
+        
+        
+        
+        Examples:
+            >>> data = {
+                    'text': [
+                        ['房间', '差', '。'],
+                        ['房间', '比较', '差', '，', '尤其', '是', '洗手间', '。']
+                    ],
+                    'others': [
+                        [0.1, 0.9, 0],
+                        [0, 0, 0.7, 0, 0.1, 0, 0.2, 0]
+                    ]
+                }
+            >>> 
+            >>> 
+            
+            
+        '''
         if max_len is None:
             max_len = self.sequence_length
         if subset is not None:
             target = utils.get_list_subset(data, subset)
         else:
             target = data
+        
+        
+        
         numerized_samples = self.numerize_token_sequences(target)
         #pdb.set_trace()
         return self.pad_sequences(
@@ -205,16 +244,17 @@ class Processor(object):
         
     def numerize_token_sequences(self,
                                  sequences: List[List[str]]):
-        result = []
+        result = list()
         for seq in sequences:
             if self.add_bos_eos:
                 seq = [self.token_bos] + seq + [self.token_eos]
             unk_index = self.token2idx[self.token_unk]
             result.append([self.token2idx.get(token, unk_index) for token in seq])
+            
         return result
 
     def numerize_label_sequences(self, sequences: List[str]) -> List[int]:
-        """
+        '''
         Convert label sequence to label-index sequence
         ``['O', 'O', 'B-ORG'] -> [0, 0, 2]``
 
@@ -223,7 +263,8 @@ class Processor(object):
 
         Returns:
             label-index sequence, list of int
-        """
+            
+        '''
         return [self.label2idx[label] for label in sequences]
 
     def reverse_numerize_label_sequences(self, sequences):
